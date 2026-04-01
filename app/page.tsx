@@ -38,59 +38,6 @@ export default function Home() {
         <div className="absolute inset-0 opacity-[0.16] [background-image:linear-gradient(to_right,rgba(231,236,235,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(231,236,235,0.06)_1px,transparent_1px)] [background-size:64px_64px]" />
         <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(7,10,11,0.0),rgba(7,10,11,0.85)_55%,rgba(7,10,11,1))]" />
       </div>
-      <header className="sticky top-0 z-20 border-b border-[color:var(--hub-border)] bg-[color:rgba(7,10,11,0.72)] backdrop-blur">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-4">
-          <Link
-            href="/"
-            className="group inline-flex items-center gap-3"
-            aria-label="TARKOV HUB 홈"
-          >
-            <span className="relative grid h-9 w-9 place-items-center rounded-lg border border-[color:var(--hub-border)] bg-[color:var(--hub-panel)]">
-              <span className="h-2 w-2 rounded-full bg-[color:var(--hub-accent)] shadow-[0_0_0_5px_rgba(157,187,57,0.12)]" />
-            </span>
-            <span className="leading-none">
-              <span className="block text-sm tracking-[0.28em] text-[color:var(--hub-muted)]">
-                ESCAPE FROM TARKOV
-              </span>
-              <span className="block text-lg font-semibold tracking-[0.12em]">
-                TARKOV HUB
-              </span>
-            </span>
-          </Link>
-          <nav className="hidden items-center gap-1 md:flex" aria-label="주요 메뉴">
-            <Link
-              href="#weapons"
-              className="rounded-lg px-3 py-2 text-sm text-[color:var(--hub-muted)] hover:bg-[color:rgba(231,236,235,0.06)] hover:text-[color:var(--foreground)]"
-            >
-              무기도감
-            </Link>
-            <Link
-              href="#ammo"
-              className="rounded-lg px-3 py-2 text-sm text-[color:var(--hub-muted)] hover:bg-[color:rgba(231,236,235,0.06)] hover:text-[color:var(--foreground)]"
-            >
-              탄약정보
-            </Link>
-            <Link
-              href="#quests"
-              className="rounded-lg px-3 py-2 text-sm text-[color:var(--hub-muted)] hover:bg-[color:rgba(231,236,235,0.06)] hover:text-[color:var(--foreground)]"
-            >
-              퀘스트
-            </Link>
-          </nav>
-          <div className="flex items-center gap-2">
-            <span className="hidden rounded-full border border-[color:var(--hub-border)] bg-[color:rgba(17,26,29,0.65)] px-3 py-1 text-xs text-[color:var(--hub-muted)] sm:inline-flex">
-              Dark • Olive • Gunmetal
-            </span>
-            <button
-              type="button"
-              className="inline-flex items-center justify-center rounded-lg border border-[color:var(--hub-border)] bg-[color:var(--hub-panel)] px-3 py-2 text-sm text-[color:var(--foreground)] hover:bg-[color:var(--hub-panel-2)] md:hidden"
-              aria-label="메뉴"
-            >
-              Menu
-            </button>
-          </div>
-        </div>
-      </header>
       <main className="mx-auto w-full max-w-6xl px-4">
         <section className="pt-12 md:pt-16">
           <div className="rounded-2xl border border-[color:var(--hub-border)] bg-[linear-gradient(135deg,rgba(17,26,29,0.72),rgba(13,18,20,0.72))] p-6 shadow-[0_25px_80px_rgba(0,0,0,0.55)] md:p-10">
@@ -251,7 +198,7 @@ export default function Home() {
                     세부 스탯/모딩 추천은 추후 업데이트 예정
                   </p>
                   <Link
-                    href={w.name === "M4A1" ? "/weapons/m4a1" : "#"}
+                    href={`/weapons/${w.name.toLowerCase()}`}
                     className="rounded-lg bg-[color:rgba(109,127,42,0.14)] px-3 py-2 text-sm font-semibold text-[color:var(--foreground)] ring-1 ring-inset ring-[color:rgba(109,127,42,0.28)] hover:bg-[color:rgba(109,127,42,0.22)]"
                   >
                     상세 보기 →

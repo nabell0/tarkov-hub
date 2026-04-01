@@ -1,56 +1,53 @@
 import Link from "next/link";
 import Image from "next/image";
 
-const m4a1Stats = [
-  { label: "인체공학", value: "56" },
-  { label: "수직 반동", value: "88" },
-  { label: "수평 반동", value: "215" },
-  { label: "총구 초속", value: "884 m/s" },
-  { label: "연사력", value: "800 RPM" },
-  { label: "무게", value: "3.36 kg" },
-  { label: "사용 탄약", value: "5.56x45 NATO" },
+const mp7a1Stats = [
+  { label: "연사력", value: "950 RPM" },
+  { label: "인체공학", value: "65" },
+  { label: "수직 반동", value: "32" },
+  { label: "무게", value: "2.27 kg" },
+  { label: "유효 사거리", value: "200 m" },
+  { label: "사용 탄약", value: "4.6x30mm HK" },
 ];
 
 const builds = [
   {
     title: "근거리 추천 모딩",
-    desc: "빠른 반응이 필요한 근거리 교전에 적합한 빌드입니다.",
+    desc: "실내 교전/코너 피킹 위주로 빠르게 킬각을 잡는 세팅입니다.",
     parts: [
-      { label: "핸드가드", value: "Geissele SMR MK16" },
-      { label: "개머리판", value: "Magpul CTR Carbine" },
+      { label: "개머리판", value: "HK MP7A1 stock" },
       { label: "전방 손잡이", value: "RK-2" },
-      { label: "총구", value: "SureFire SOCOM556-RC2" },
+      { label: "총구", value: "B&T Rotex-II 4.6x30mm sound suppressor" },
       { label: "조준경", value: "EOTech EXPS3" },
-      { label: "탄창", value: "STANAG 60-round" },
+      { label: "탄창", value: "HK MP7 4.6x30 40-round magazine" },
+      { label: "전술 장비", value: "L3Harris AN/PEQ-15 tactical device" },
     ],
   },
   {
-    title: "가성비 소음기 모딩",
-    desc: "정확한 저격 및 중장거리 제압에 어울리는 빌드입니다.",
+    title: "가성비 소음기 빌드",
+    desc: "소음기 + 무난한 반동/조작성 밸런스로 안정적인 운영을 목표로 합니다.",
     parts: [
-      { label: "핸드가드", value: "Midwest Industries 14\"" },
-      { label: "개머리판", value: "PRS GEN3" },
+      { label: "개머리판", value: "HK MP7A1 stock" },
       { label: "전방 손잡이", value: "Shift" },
-      { label: "총구", value: "Thunder Beast 223CB" },
-      { label: "조준경", value: "Trijicon VCOG 1-6x" },
-      { label: "탄창", value: "Magpul PMAG 30-round" },
-      { label: "장전 손잡이", value: "Raptor" },
+      { label: "총구", value: "B&T Rotex-II 4.6x30mm sound suppressor" },
+      { label: "조준경", value: "Holosun HS401G5 reflex sight" },
+      { label: "탄창", value: "HK MP7 4.6x30 30-round magazine" },
     ],
   },
 ];
 
 const recommendedAmmo = [
   {
-    name: "M855A1",
-    role: "종결 / 고관통",
-    penetration: 44,
-    damage: 49,
+    name: "AP SX",
+    role: "고관통",
+    penetration: 53,
+    damage: 35,
   },
   {
-    name: "M856A1",
-    role: "가성비 / 예광탄",
-    penetration: 37,
-    damage: 54,
+    name: "FMJ SX",
+    role: "무난 / 범용",
+    penetration: 40,
+    damage: 43,
   },
 ];
 
@@ -62,7 +59,7 @@ function Tag({ children }: { children: React.ReactNode }) {
   );
 }
 
-export default function M4A1Page() {
+export default function MP7A1Page() {
   return (
     <div className="min-h-full">
       {/* 배경: 메인 페이지와 통일 */}
@@ -96,28 +93,31 @@ export default function M4A1Page() {
         <section>
           <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <h1 className="text-2xl font-bold text-[color:var(--foreground)]">
-              Colt M4A1
+              H&amp;K MP7A1
             </h1>
             <div className="flex gap-2">
-              <Tag>Assault Rifle</Tag>
-              <Tag>5.56x45 NATO</Tag>
+              <Tag>SMG</Tag>
+              <Tag>4.6x30mm HK</Tag>
             </div>
           </div>
           <p className="mb-4 text-sm text-[color:var(--hub-muted)]">
-            Escape from Tarkov을 대표하는 모딩 자유도가 높은 돌격 소총. 다양한 상황에 맞게 커스터마이즈 할 수 있습니다.
+            MP7A1은 근접전(CQB)에 강한 초고속 연사 SMG로, 낮은 반동과 빠른 조작감이
+            강점입니다. 팩토리/인터체인지 등 실내 교전에서 특히 빛납니다.
           </p>
         </section>
         {/* 기본 스탯 */}
         <section className="mb-8">
-          <h2 className="mb-2 text-lg font-semibold text-[color:var(--foreground)]">기본 스탯</h2>
+          <h2 className="mb-2 text-lg font-semibold text-[color:var(--foreground)]">
+            기본 스탯
+          </h2>
 
           <div className="mb-4 flex justify-center">
             <div className="w-full max-w-2xl overflow-hidden rounded-2xl border border-[color:var(--hub-border)] bg-[color:rgba(7,10,11,0.35)]">
               <Image
-                src="https://static.wikia.nocookie.net/escapefromtarkov_gamepedia/images/2/29/M4a1.png/revision/latest?cb=20231017102422"
-                alt="M4A1 기본 외형"
-                width={1597}
-                height={573}
+                src="https://static.wikia.nocookie.net/escapefromtarkov_gamepedia/images/0/02/HKMP7A1Image.png/revision/latest?cb=20231025201954"
+                alt="MP7A1 기본 외형"
+                width={1200}
+                height={417}
                 priority
                 unoptimized
                 className="h-auto w-full object-cover"
@@ -127,7 +127,7 @@ export default function M4A1Page() {
           </div>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {m4a1Stats.map((stat) => (
+            {mp7a1Stats.map((stat) => (
               <div
                 key={stat.label}
                 className="rounded-xl border border-[color:var(--hub-border)] bg-[color:rgba(7,10,11,0.35)] px-4 py-3"
@@ -144,20 +144,33 @@ export default function M4A1Page() {
         </section>
         {/* 추천 모딩 예시 */}
         <section className="mb-8">
-          <h2 className="mb-3 text-lg font-semibold text-[color:var(--foreground)]">추천 모딩 예시</h2>
+          <h2 className="mb-3 text-lg font-semibold text-[color:var(--foreground)]">
+            추천 모딩 예시
+          </h2>
           <div className="grid gap-6 md:grid-cols-2">
             {builds.map((build) => (
               <article
                 key={build.title}
                 className="rounded-2xl border border-[color:var(--hub-border)] bg-[color:rgba(13,18,20,0.48)] p-5 flex flex-col gap-2"
               >
-                <h3 className="text-base font-bold text-[color:var(--foreground)]">{build.title}</h3>
-                <p className="text-xs text-[color:var(--hub-muted)] mb-2">{build.desc}</p>
+                <h3 className="text-base font-bold text-[color:var(--foreground)]">
+                  {build.title}
+                </h3>
+                <p className="text-xs text-[color:var(--hub-muted)] mb-2">
+                  {build.desc}
+                </p>
                 <ul className="flex flex-col gap-1">
                   {build.parts.map((part) => (
-                    <li key={part.label} className="flex items-center justify-between border-b border-dashed border-[color:var(--hub-border)] last:border-b-0 pb-1 last:pb-0">
-                      <span className="text-sm text-[color:var(--hub-muted)]">{part.label}</span>
-                      <span className="text-sm font-medium text-[color:var(--foreground)]">{part.value}</span>
+                    <li
+                      key={part.label}
+                      className="flex items-center justify-between border-b border-dashed border-[color:var(--hub-border)] last:border-b-0 pb-1 last:pb-0"
+                    >
+                      <span className="text-sm text-[color:var(--hub-muted)]">
+                        {part.label}
+                      </span>
+                      <span className="text-sm font-medium text-[color:var(--foreground)]">
+                        {part.value}
+                      </span>
                     </li>
                   ))}
                 </ul>
@@ -166,10 +179,10 @@ export default function M4A1Page() {
                   <div className="mt-3">
                     <div className="w-full overflow-hidden rounded-xl border border-[color:var(--hub-border)] bg-[color:rgba(7,10,11,0.35)]">
                       <Image
-                        src="https://static.wikia.nocookie.net/escapefromtarkov_gamepedia/images/6/65/M4modded.png/revision/latest?cb=20240508062306"
-                        alt="M4A1 추천 모딩 (근거리)"
-                        width={316}
-                        height={127}
+                        src="https://static.wikia.nocookie.net/escapefromtarkov_gamepedia/images/c/c6/Rotex2.png/revision/latest?cb=20181108183105"
+                        alt="MP7A1 소음기 장착 모딩 예시"
+                        width={800}
+                        height={467}
                         unoptimized
                         className="h-auto w-full object-cover"
                         sizes="(max-width: 768px) 100vw, 420px"
@@ -181,7 +194,7 @@ export default function M4A1Page() {
             ))}
           </div>
         </section>
-        {/* 추천 탄약 */}        
+        {/* 추천 탄약 */}
         <section className="mb-8">
           <h2 className="mb-3 text-lg font-semibold text-[color:var(--foreground)]">
             추천 탄약 (Recommended Ammo)
@@ -194,7 +207,7 @@ export default function M4A1Page() {
               >
                 <div className="mb-3 flex items-center justify-between gap-2">
                   <h3 className="text-base font-bold text-[color:var(--foreground)]">
-                    5.56x45mm NATO {ammo.name}
+                    4.6x30mm {ammo.name}
                   </h3>
                   <span className="rounded-full border border-[color:var(--hub-border)] bg-[color:rgba(109,127,42,0.14)] px-2.5 py-1 text-xs text-[color:var(--foreground)]">
                     {ammo.role}
