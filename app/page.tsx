@@ -1,28 +1,10 @@
 import Link from "next/link";
-const popularWeapons = [
-  {
-    name: "M4A1",
-    type: "Assault Rifle",
-    calibers: ["5.56x45"],
-    tags: ["Meta", "All-rounder"],
-    stats: [
-      { label: "Base RPM", value: "800" },
-      { label: "Recoil", value: "Medium" },
-      { label: "Modding", value: "Excellent" },
-    ],
-  },
-  {
-    name: "MP7A1",
-    type: "SMG",
-    calibers: ["4.6x30"],
-    tags: ["CQB", "Laser beam"],
-    stats: [
-      { label: "Base RPM", value: "950" },
-      { label: "Recoil", value: "Low" },
-      { label: "TTK", value: "Fast (close)" },
-    ],
-  },
-] as const;
+import Image from "next/image";
+import { weaponsData } from "@/src/data/weapons";
+
+const popularWeapons = weaponsData.filter((weapon) =>
+  ["m4a1", "mp7a1"].includes(weapon.weaponName),
+);
 function Tag({ children }: { children: React.ReactNode }) {
   return (
     <span className="inline-flex items-center rounded-full border border-[color:var(--hub-border)] bg-[color:rgba(109,127,42,0.10)] px-2 py-0.5 text-xs font-medium text-[color:var(--foreground)]">
@@ -135,35 +117,35 @@ export default function Home() {
                 인기 무기
               </h2>
               <p className="mt-1 text-sm text-[color:var(--hub-muted)]">
-                이번 시즌 자주 보이는 무기 2개를 카드로 정리했어요.
+                이번 시즌 자주 보이는 무기 2종을 카드로 정리했어요.
               </p>
             </div>
             <Link
-              href="#"
+              href="/weapons"
               className="hidden rounded-lg border border-[color:var(--hub-border)] bg-[color:rgba(17,26,29,0.45)] px-3 py-2 text-sm text-[color:var(--hub-muted)] hover:bg-[color:rgba(17,26,29,0.7)] hover:text-[color:var(--foreground)] sm:inline-flex"
             >
-              전체 무기도감 (준비중)
+              전체 무기도감
             </Link>
           </div>
           <div className="mt-6 grid gap-4 md:grid-cols-2">
             {popularWeapons.map((w) => (
               <article
-                key={w.name}
+                key={w.weaponName}
                 className="group relative overflow-hidden rounded-2xl border border-[color:var(--hub-border)] bg-[linear-gradient(135deg,rgba(13,18,20,0.88),rgba(17,26,29,0.72))] p-6 shadow-[0_22px_70px_rgba(0,0,0,0.55)]"
               >
                 <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-[radial-gradient(circle_at_center,rgba(109,127,42,0.22),transparent_60%)] blur-2xl transition-opacity group-hover:opacity-80" />
                 <header className="flex items-start justify-between gap-4">
                   <div>
                     <p className="text-xs tracking-[0.28em] text-[color:var(--hub-muted)]">
-                      {w.type.toUpperCase()}
+                      {w.tags[0].toUpperCase()}
                     </p>
                     <h3 className="mt-2 text-2xl font-semibold tracking-tight">
-                      {w.name}
+                      {w.displayName}
                     </h3>
                     <p className="mt-2 text-sm text-[color:var(--hub-muted)]">
                       Caliber:{" "}
                       <span className="text-[color:var(--foreground)]">
-                        {w.calibers.join(", ")}
+                        {w.caliberLabel}
                       </span>
                     </p>
                   </div>
@@ -172,14 +154,25 @@ export default function Home() {
                       Popular pick
                     </span>
                     <div className="flex flex-wrap justify-end gap-2">
-                      {w.tags.map((t) => (
+                      {w.tags.slice(0, 2).map((t) => (
                         <Tag key={t}>{t}</Tag>
                       ))}
                     </div>
                   </div>
                 </header>
+                <div className="mt-4 overflow-hidden rounded-xl border border-[color:var(--hub-border)] bg-[color:rgba(7,10,11,0.35)]">
+                  <Image
+                    src={w.baseImage.src}
+                    alt={w.baseImage.alt}
+                    width={w.baseImage.width}
+                    height={w.baseImage.height}
+                    unoptimized
+                    className="h-36 w-full object-cover"
+                    sizes="(max-width: 768px) 100vw, 640px"
+                  />
+                </div>
                 <div className="mt-5 grid grid-cols-3 gap-3">
-                  {w.stats.map((s) => (
+                  {w.stats.slice(0, 3).map((s) => (
                     <div
                       key={s.label}
                       className="rounded-xl border border-[color:var(--hub-border)] bg-[color:rgba(7,10,11,0.35)] px-3 py-3"
@@ -198,7 +191,7 @@ export default function Home() {
                     세부 스탯/모딩 추천은 추후 업데이트 예정
                   </p>
                   <Link
-                    href={`/weapons/${w.name.toLowerCase()}`}
+                    href={`/weapons/${w.weaponName}`}
                     className="rounded-lg bg-[color:rgba(109,127,42,0.14)] px-3 py-2 text-sm font-semibold text-[color:var(--foreground)] ring-1 ring-inset ring-[color:rgba(109,127,42,0.28)] hover:bg-[color:rgba(109,127,42,0.22)]"
                   >
                     상세 보기 →
