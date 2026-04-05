@@ -4,6 +4,18 @@
 
 ---
 
+### 최신 구조(2026-04 기준) — 빠른 링크
+
+- **Supabase·테이블:** `08_supabase_client_and_tables.md`
+- **무기 상세 `/weapons/[weaponName]` + DB 스키마:** `09_weapon_detail_supabase.md`
+- **모딩·탄약 카드 UI:** `10_weapon_mods_ammo_ui.md`
+- **SQL 시드·`image_url` UPDATE 요약:** `11_sql_reference_mods_ammo.md`
+- **이전 일자 작업 로그:** `07_2026-04-01_work_log.md`
+
+무기 상세는 **정적 `m4a1/page.tsx`가 아니라** 다이나믹 라우트 + Supabase `weapons` / `weapon_mods` / `weapon_ammo` 조합으로 동작합니다.
+
+---
+
 ### 현재 만들어진 화면(라우트)
 
 - **`/`**: 메인 페이지
