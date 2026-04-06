@@ -1,5 +1,18 @@
 import Link from "next/link";
-import { supabase } from "@/src/lib/supabase";
+import type { weapon_ammo, weapon_mods, weapons } from "@/lib/prisma-model-types";
+import { prisma } from "@/lib/prisma";
+
+const weaponInclude = {
+  weapon_mods: true,
+  weapon_ammo: true,
+} as const;
+
+type WeaponWithRelations = weapons & {
+  weapon_mods: weapon_mods[];
+  weapon_ammo: weapon_ammo[];
+};
+type WeaponModRow = weapon_mods;
+type WeaponAmmoRow = weapon_ammo;
 
 function Tag({ children }: { children: React.ReactNode }) {
   return (
@@ -9,27 +22,12 @@ function Tag({ children }: { children: React.ReactNode }) {
   );
 }
 
-type WeaponRow = {
-  id: string;
-  name?: string | null;
-  display_name?: string | null;
-  description?: string | null;
-  image_url?: string | null;
-  base_rpm?: number | string | null;
-  recoil?: string | null;
-  ttk?: string | null;
-  type?: string | null;
-  calibers?: string | string[] | null;
-};
-
-type DbRow = Record<string, unknown>;
-
 function formatStatValue(value: string | number | null | undefined): string {
   if (value === null || value === undefined || value === "") return "—";
   return String(value);
 }
 
-function formatCalibers(calibers: WeaponRow["calibers"]): string {
+function formatCalibers(calibers: string[] | string | null | undefined): string {
   if (calibers == null) return "—";
   if (Array.isArray(calibers)) return calibers.join(", ");
   if (typeof calibers === "string") {
@@ -46,44 +44,32 @@ function formatCalibers(calibers: WeaponRow["calibers"]): string {
   return String(calibers);
 }
 
-function pickImageUrl(row: DbRow): string | null {
-  const v = row.image_url;
-  return typeof v === "string" && v.trim().length > 0 ? v.trim() : null;
+function pickImageUrl(imageUrl: string | null | undefined): string | null {
+  return typeof imageUrl === "string" && imageUrl.trim().length > 0 ? imageUrl.trim() : null;
 }
 
-function pickString(row: DbRow, keys: string[]): string | null {
-  for (const key of keys) {
-    const v = row[key];
-    if (typeof v === "string" && v.trim().length > 0) return v.trim();
-  }
-  return null;
-}
-
-function parseModParts(row: DbRow): { label: string; value: string }[] {
-  const raw = row.parts;
-  if (raw == null) return [];
-  let parsed: unknown = raw;
-  if (typeof raw === "string") {
-    try {
-      parsed = JSON.parse(raw);
-    } catch {
-      return [];
-    }
-  }
-  if (!Array.isArray(parsed)) return [];
-  return parsed
-    .map((item) => {
-      if (item && typeof item === "object" && !Array.isArray(item)) {
-        const o = item as Record<string, unknown>;
-        const label = o.label ?? o.name ?? o.key;
-        const value = o.value ?? o.part ?? o.item;
-        if (typeof label === "string" && typeof value === "string") {
-          return { label, value };
-        }
-      }
-      return null;
+function parseDescriptionPartLines(text: string): { label: string; value: string }[] {
+  return text
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const m = line.match(/^([^:]+):\s*(.+)$/);
+      return m ? { label: m[1].trim(), value: m[2].trim() } : null;
     })
     .filter((x): x is { label: string; value: string } => x !== null);
+}
+
+function splitModDescription(description: string | null): {
+  summary: string;
+  partLines: { label: string; value: string }[];
+} {
+  if (!description?.trim()) return { summary: "", partLines: [] };
+  const blocks = description.split(/\n\n+/);
+  const summary = (blocks[0] ?? "").trim();
+  const rest = blocks.slice(1).join("\n\n");
+  const partLines = parseDescriptionPartLines(rest);
+  return { summary, partLines };
 }
 
 function ModCardImage({ src, alt }: { src: string | null; alt: string }) {
@@ -136,17 +122,17 @@ export default async function WeaponPage({
   const { weaponName } = await params;
   const weaponId = weaponName.toLowerCase();
 
-  const { data: weaponRaw, error } = await supabase
-    .from("weapons")
-    .select("*")
-    .eq("id", weaponId)
-    .single();
-
-  if (error) {
-    console.error("DB 조회 에러:", error);
+  let weapon: WeaponWithRelations | null = null;
+  try {
+    weapon = await prisma.weapons.findUnique({
+      where: { id: weaponId },
+      include: weaponInclude,
+    });
+  } catch (e) {
+    console.error("DB 조회 에러:", e);
   }
 
-  if (error || !weaponRaw) {
+  if (!weapon) {
     return (
       <main className="mx-auto flex min-h-[60vh] w-full max-w-3xl items-center justify-center px-4 py-10">
         <div className="rounded-2xl border border-[color:var(--hub-border)] bg-[color:rgba(13,18,20,0.55)] p-6 text-center">
@@ -164,25 +150,11 @@ export default async function WeaponPage({
     );
   }
 
-  const weapon = weaponRaw as WeaponRow;
   const title = weapon.name ?? weapon.display_name ?? weapon.id;
   const caliberText = formatCalibers(weapon.calibers);
 
-  const [{ data: modsRaw, error: modsError }, { data: ammoRaw, error: ammoError }] =
-    await Promise.all([
-      supabase.from("weapon_mods").select("*").eq("weapon_id", weapon.id),
-      supabase.from("weapon_ammo").select("*").eq("weapon_id", weapon.id),
-    ]);
-
-  if (modsError) {
-    console.error("weapon_mods 조회 에러:", modsError);
-  }
-  if (ammoError) {
-    console.error("weapon_ammo 조회 에러:", ammoError);
-  }
-
-  const mods = (modsRaw ?? []) as DbRow[];
-  const ammoRows = (ammoRaw ?? []) as DbRow[];
+  const mods = weapon.weapon_mods;
+  const ammoRows = weapon.weapon_ammo;
 
   const statCards = [
     { label: "Base RPM", value: formatStatValue(weapon.base_rpm) },
@@ -283,16 +255,11 @@ export default async function WeaponPage({
             </div>
           ) : (
             <div className="grid gap-6 md:grid-cols-2">
-              {mods.map((mod, index) => {
-                const modTitle =
-                  pickString(mod, ["title", "build_title", "name"]) ?? `모딩 ${index + 1}`;
-                const modDesc = pickString(mod, ["description", "desc", "summary"]) ?? "";
-                const modImg = pickImageUrl(mod);
-                const parts = parseModParts(mod);
-                const rowKey =
-                  typeof mod.id === "string" || typeof mod.id === "number"
-                    ? String(mod.id)
-                    : `mod-${index}`;
+              {mods.map((mod: WeaponModRow, index: number) => {
+                const { summary: modDesc, partLines: parts } = splitModDescription(mod.description);
+                const modTitle = mod.part_name.trim() || `모딩 ${index + 1}`;
+                const modImg = pickImageUrl(mod.image_url);
+                const rowKey = String(mod.id);
 
                 return (
                   <article
@@ -338,16 +305,13 @@ export default async function WeaponPage({
             </div>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2">
-              {ammoRows.map((ammo, index) => {
-                const ammoName = pickString(ammo, ["name", "ammo_name", "label"]) ?? `탄약 ${index + 1}`;
-                const ammoRole = pickString(ammo, ["role", "note", "tag"]) ?? "";
-                const pen = ammo.penetration ?? ammo.pen;
-                const dmg = ammo.damage ?? ammo.dmg;
-                const ammoImg = pickImageUrl(ammo);
-                const rowKey =
-                  typeof ammo.id === "string" || typeof ammo.id === "number"
-                    ? String(ammo.id)
-                    : `ammo-${index}`;
+              {ammoRows.map((ammo: WeaponAmmoRow, index: number) => {
+                const ammoName = ammo.ammo_name.trim() || `탄약 ${index + 1}`;
+                const ammoRole = "";
+                const pen = ammo.penetration;
+                const dmg = ammo.damage;
+                const ammoImg = pickImageUrl(ammo.image_url);
+                const rowKey = String(ammo.id);
 
                 return (
                   <article

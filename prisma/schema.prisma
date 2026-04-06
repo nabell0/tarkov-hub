@@ -1,0 +1,44 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model weapon_ammo {
+  id          Int      @id @default(autoincrement())
+  weapon_id   String?  @db.VarChar
+  ammo_name   String   @db.VarChar
+  damage      Int?
+  penetration Int?
+  image_url   String?
+  weapons     weapons? @relation(fields: [weapon_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model weapon_mods {
+  id          Int      @id @default(autoincrement())
+  weapon_id   String?  @db.VarChar
+  part_name   String   @db.VarChar
+  description String?
+  image_url   String?
+  weapons     weapons? @relation(fields: [weapon_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model weapons {
+  id           String        @id @db.VarChar
+  name         String        @db.VarChar
+  type         String        @db.VarChar
+  calibers     String[]
+  tags         String[]
+  base_rpm     Int?
+  recoil       String?       @db.VarChar
+  ttk          String?       @db.VarChar
+  image_url    String?
+  created_at   DateTime?     @default(now()) @db.Timestamptz(6)
+  display_name String?       @db.VarChar
+  description  String?
+  weapon_ammo  weapon_ammo[]
+  weapon_mods  weapon_mods[]
+}
