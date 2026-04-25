@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import type { weapon_ammo, weapon_mods, weapons } from "@/lib/prisma-model-types";
 import { prisma } from "@/lib/prisma";
 
@@ -10,6 +11,11 @@ const weaponInclude = {
 type WeaponWithRelations = weapons & {
   weapon_mods: weapon_mods[];
   weapon_ammo: weapon_ammo[];
+  recommendedAmmo?: string[];
+  recommendedMods?: string[];
+  ergonomics?: number | null;
+  verticalRecoil?: number | null;
+  horizontalRecoil?: number | null;
 };
 type WeaponModRow = weapon_mods;
 type WeaponAmmoRow = weapon_ammo;
@@ -25,6 +31,11 @@ function Tag({ children }: { children: React.ReactNode }) {
 function formatStatValue(value: string | number | null | undefined): string {
   if (value === null || value === undefined || value === "") return "—";
   return String(value);
+}
+
+function clampPercent(value: number | null | undefined): number {
+  if (value === null || value === undefined) return 0;
+  return Math.max(0, Math.min(100, value));
 }
 
 function formatCalibers(calibers: string[] | string | null | undefined): string {
@@ -76,13 +87,7 @@ function ModCardImage({ src, alt }: { src: string | null; alt: string }) {
   if (src) {
     return (
       <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-[color:var(--hub-border)] bg-[color:rgba(7,10,11,0.35)]">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={src}
-          alt={alt}
-          className="h-full w-full object-contain p-2 sm:p-3"
-          loading="lazy"
-        />
+        <Image src={src} alt={alt} fill unoptimized className="object-contain p-2 sm:p-3" sizes="(max-width: 768px) 100vw, 420px" />
       </div>
     );
   }
@@ -97,13 +102,7 @@ function AmmoCardImage({ src, alt }: { src: string | null; alt: string }) {
   if (src) {
     return (
       <div className="relative mb-3 aspect-[4/3] w-full overflow-hidden rounded-xl border border-[color:var(--hub-border)] bg-[color:rgba(7,10,11,0.35)]">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={src}
-          alt={alt}
-          className="h-full w-full object-contain p-2"
-          loading="lazy"
-        />
+        <Image src={src} alt={alt} fill unoptimized className="object-contain p-2" sizes="(max-width: 768px) 100vw, 420px" />
       </div>
     );
   }
@@ -114,13 +113,33 @@ function AmmoCardImage({ src, alt }: { src: string | null; alt: string }) {
   );
 }
 
+function InlineItemIcon({ src, alt }: { src: string | null; alt: string }) {
+  if (src) {
+    return (
+      <span className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[color:var(--hub-border)] bg-[color:rgba(7,10,11,0.35)]">
+        <Image src={src} alt={alt} fill unoptimized className="object-contain p-1" sizes="40px" />
+      </span>
+    );
+  }
+
+  return (
+    <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-dashed border-[color:var(--hub-border)] bg-[color:rgba(17,26,29,0.45)] text-[10px] text-[color:var(--hub-muted)]">
+      N/A
+    </span>
+  );
+}
+
 export default async function WeaponPage({
   params,
 }: {
   params: Promise<{ weaponName: string }>;
 }) {
   const { weaponName } = await params;
-  const weaponId = weaponName.toLowerCase();
+  const rawWeaponId = weaponName.toLowerCase();
+  const weaponIdAliasMap: Record<string, string> = {
+    "as-val": "asval",
+  };
+  const weaponId = weaponIdAliasMap[rawWeaponId] ?? rawWeaponId;
 
   let weapon: WeaponWithRelations | null = null;
   try {
@@ -165,12 +184,39 @@ export default async function WeaponPage({
   ];
 
   const image_url =
-    typeof weapon.image_url === "string" && weapon.image_url.trim().length > 0
-      ? weapon.image_url.trim()
+    typeof weapon.imageUrl === "string" && weapon.imageUrl.trim().length > 0
+      ? weapon.imageUrl.trim()
       : null;
   const hasImage = image_url !== null;
 
   const caliberPrefix = caliberText !== "—" ? caliberText : "";
+  const weaponAny = weapon as unknown as Record<string, unknown>;
+  const recommendedAmmo =
+    (weaponAny.recommendedAmmo as string[] | undefined) ??
+    (weaponAny.recommended_ammo as string[] | undefined) ??
+    [];
+  const recommendedMods =
+    (weaponAny.recommendedMods as string[] | undefined) ??
+    (weaponAny.recommended_mods as string[] | undefined) ??
+    [];
+  const ergonomics =
+    (weaponAny.ergonomics as number | null | undefined) ??
+    (weaponAny.ergonomics_value as number | null | undefined) ??
+    null;
+  const verticalRecoil =
+    (weaponAny.verticalRecoil as number | null | undefined) ??
+    (weaponAny.vertical_recoil as number | null | undefined) ??
+    null;
+  const horizontalRecoil =
+    (weaponAny.horizontalRecoil as number | null | undefined) ??
+    (weaponAny.horizontal_recoil as number | null | undefined) ??
+    null;
+  const fullyModdedImageUrl =
+    (weaponAny.fullyModdedImageUrl as string | undefined) ??
+    (weaponAny.fully_modded_image_url as string | undefined) ??
+    null;
+  const ammoImageMap = new Map(ammoRows.map((row) => [row.ammo_name, pickImageUrl(row.imageUrl)]));
+  const modImageMap = new Map(mods.map((row) => [row.part_name, pickImageUrl(row.imageUrl)]));
 
   return (
     <div className="min-h-full">
@@ -202,13 +248,14 @@ export default async function WeaponPage({
           <div className="relative aspect-video w-full bg-[radial-gradient(ellipse_at_50%_35%,rgba(109,127,42,0.12),transparent_50%),linear-gradient(180deg,rgba(13,18,20,0.75),rgba(7,10,11,0.92))]">
             {hasImage ? (
               <div className="absolute inset-0 p-3 sm:p-5">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+                <Image
                   src={image_url}
                   alt={title}
-                  className="h-full w-full object-contain"
-                  loading="eager"
-                  fetchPriority="high"
+                  fill
+                  unoptimized
+                  className="object-contain"
+                  priority
+                  sizes="(max-width: 768px) 100vw, 768px"
                 />
               </div>
             ) : null}
@@ -243,6 +290,98 @@ export default async function WeaponPage({
               </div>
             ))}
           </div>
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {[
+              {
+                label: "ERGONOMICS",
+                value: ergonomics,
+                barValue: clampPercent(ergonomics),
+              },
+              {
+                label: "VERTICAL RECOIL",
+                value: verticalRecoil,
+                barValue: clampPercent(
+                  verticalRecoil == null ? null : 100 - Math.min(verticalRecoil, 100),
+                ),
+              },
+              {
+                label: "HORIZONTAL RECOIL",
+                value: horizontalRecoil,
+                barValue: clampPercent(
+                  horizontalRecoil == null
+                    ? null
+                    : 100 - Math.min((horizontalRecoil ?? 0) / 2, 100),
+                ),
+              },
+            ].map((barStat) => (
+              <article
+                key={barStat.label}
+                className="rounded-xl border border-[color:var(--hub-border)] bg-[color:rgba(7,10,11,0.35)] px-4 py-3"
+              >
+                <div className="mb-2 flex items-center justify-between">
+                  <p className="text-[11px] tracking-[0.18em] text-[color:var(--hub-muted)]">
+                    {barStat.label}
+                  </p>
+                  <p className="text-sm font-semibold text-[color:var(--foreground)]">
+                    {formatStatValue(barStat.value)}
+                  </p>
+                </div>
+                <div className="h-2 w-full overflow-hidden rounded-full bg-[color:rgba(231,236,235,0.08)]">
+                  <div
+                    className="h-full rounded-full bg-[linear-gradient(90deg,rgba(109,127,42,0.55),rgba(157,187,57,0.95))]"
+                    style={{ width: `${barStat.barValue}%` }}
+                  />
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="mb-8">
+          <h2 className="mb-4 text-lg font-semibold text-[color:var(--foreground)]">추천 세팅</h2>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <article className="rounded-2xl border border-[color:var(--hub-border)] bg-[color:rgba(13,18,20,0.48)] p-5">
+              <h3 className="mb-3 text-sm font-semibold tracking-[0.12em] text-[color:var(--hub-muted)]">
+                RECOMMENDED AMMO
+              </h3>
+              {recommendedAmmo.length === 0 ? (
+                <p className="text-sm text-[color:var(--hub-muted)]">등록된 추천 탄약이 없습니다.</p>
+              ) : (
+                <div className="grid grid-cols-1 gap-2">
+                  {recommendedAmmo.map((ammo: string) => (
+                    <div
+                      key={ammo}
+                      className="inline-flex items-center gap-2 rounded-xl border border-[color:var(--hub-border)] bg-[color:rgba(109,127,42,0.12)] px-2 py-2 text-xs font-medium text-[color:var(--foreground)]"
+                    >
+                      <InlineItemIcon src={ammoImageMap.get(ammo) ?? null} alt={ammo} />
+                      <span>{ammo}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </article>
+
+            <article className="rounded-2xl border border-[color:var(--hub-border)] bg-[color:rgba(13,18,20,0.48)] p-5">
+              <h3 className="mb-3 text-sm font-semibold tracking-[0.12em] text-[color:var(--hub-muted)]">
+                RECOMMENDED MODS
+              </h3>
+              {recommendedMods.length === 0 ? (
+                <p className="text-sm text-[color:var(--hub-muted)]">등록된 추천 모딩이 없습니다.</p>
+              ) : (
+                <div className="grid grid-cols-1 gap-2">
+                  {recommendedMods.map((modPart: string) => (
+                    <div
+                      key={modPart}
+                      className="inline-flex items-center gap-2 rounded-xl border border-[color:var(--hub-border)] bg-[color:rgba(231,236,235,0.06)] px-2 py-2 text-xs font-medium text-[color:var(--foreground)]"
+                    >
+                      <InlineItemIcon src={modImageMap.get(modPart) ?? null} alt={modPart} />
+                      <span>{modPart}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </article>
+          </div>
         </section>
 
         <section className="mb-8">
@@ -258,7 +397,7 @@ export default async function WeaponPage({
               {mods.map((mod: WeaponModRow, index: number) => {
                 const { summary: modDesc, partLines: parts } = splitModDescription(mod.description);
                 const modTitle = mod.part_name.trim() || `모딩 ${index + 1}`;
-                const modImg = pickImageUrl(mod.image_url);
+                const modImg = pickImageUrl(mod.imageUrl);
                 const rowKey = String(mod.id);
 
                 return (
@@ -294,6 +433,28 @@ export default async function WeaponPage({
         </section>
 
         <section className="mb-8">
+          <h2 className="mb-3 text-lg font-semibold text-[color:var(--foreground)]">최종 모딩 예시</h2>
+          <article className="overflow-hidden rounded-2xl border border-[color:var(--hub-border)] bg-[color:rgba(13,18,20,0.48)] p-4">
+            {fullyModdedImageUrl ? (
+              <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-[color:var(--hub-border)] bg-[color:rgba(7,10,11,0.35)]">
+                <Image
+                  src={fullyModdedImageUrl}
+                  alt={`${title} fully modded preset`}
+                  fill
+                  unoptimized
+                  className="object-contain p-2 sm:p-4"
+                  sizes="(max-width: 768px) 100vw, 768px"
+                />
+              </div>
+            ) : (
+              <div className="flex aspect-video w-full items-center justify-center rounded-xl border border-dashed border-[color:var(--hub-border)] bg-[color:rgba(17,26,29,0.45)]">
+                <span className="text-sm text-[color:var(--hub-muted)]">최종 모딩 이미지 없음</span>
+              </div>
+            )}
+          </article>
+        </section>
+
+        <section className="mb-8">
           <h2 className="mb-3 text-lg font-semibold text-[color:var(--foreground)]">
             추천 탄약 (Recommended Ammo)
           </h2>
@@ -310,7 +471,7 @@ export default async function WeaponPage({
                 const ammoRole = "";
                 const pen = ammo.penetration;
                 const dmg = ammo.damage;
-                const ammoImg = pickImageUrl(ammo.image_url);
+                const ammoImg = pickImageUrl(ammo.imageUrl);
                 const rowKey = String(ammo.id);
 
                 return (

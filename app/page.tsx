@@ -1,10 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { weaponsData } from "@/src/data/weapons";
-
-const popularWeapons = weaponsData.filter((weapon) =>
-  ["m4a1", "mp7a1"].includes(weapon.weaponName),
-);
+import { prisma } from "@/lib/prisma";
 function Tag({ children }: { children: React.ReactNode }) {
   return (
     <span className="inline-flex items-center rounded-full border border-[color:var(--hub-border)] bg-[color:rgba(109,127,42,0.10)] px-2 py-0.5 text-xs font-medium text-[color:var(--foreground)]">
@@ -12,7 +8,22 @@ function Tag({ children }: { children: React.ReactNode }) {
     </span>
   );
 }
-export default function Home() {
+
+function formatCaliber(calibers: string[]): string {
+  return calibers.length > 0 ? calibers.join(", ") : "—";
+}
+
+function formatStat(value: string | number | null | undefined): string {
+  if (value === null || value === undefined || value === "") return "—";
+  return String(value);
+}
+
+export default async function Home() {
+  const popularWeapons = await prisma.weapons.findMany({
+    where: { id: { in: ["m4a1", "mp7a1"] } },
+    orderBy: { created_at: "asc" },
+  });
+
   return (
     <div className="min-h-full">
       <div className="pointer-events-none fixed inset-0 -z-10">
@@ -130,22 +141,22 @@ export default function Home() {
           <div className="mt-6 grid gap-4 md:grid-cols-2">
             {popularWeapons.map((w) => (
               <article
-                key={w.weaponName}
+                key={w.id}
                 className="group relative overflow-hidden rounded-2xl border border-[color:var(--hub-border)] bg-[linear-gradient(135deg,rgba(13,18,20,0.88),rgba(17,26,29,0.72))] p-6 shadow-[0_22px_70px_rgba(0,0,0,0.55)]"
               >
                 <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-[radial-gradient(circle_at_center,rgba(109,127,42,0.22),transparent_60%)] blur-2xl transition-opacity group-hover:opacity-80" />
                 <header className="flex items-start justify-between gap-4">
                   <div>
                     <p className="text-xs tracking-[0.28em] text-[color:var(--hub-muted)]">
-                      {w.tags[0].toUpperCase()}
+                      {w.type.toUpperCase()}
                     </p>
                     <h3 className="mt-2 text-2xl font-semibold tracking-tight">
-                      {w.displayName}
+                      {w.display_name ?? w.name}
                     </h3>
                     <p className="mt-2 text-sm text-[color:var(--hub-muted)]">
                       Caliber:{" "}
                       <span className="text-[color:var(--foreground)]">
-                        {w.caliberLabel}
+                        {formatCaliber(w.calibers)}
                       </span>
                     </p>
                   </div>
@@ -154,31 +165,39 @@ export default function Home() {
                       Popular pick
                     </span>
                     <div className="flex flex-wrap justify-end gap-2">
-                      {w.tags.slice(0, 2).map((t) => (
+                      {[w.type, ...w.calibers].slice(0, 2).map((t) => (
                         <Tag key={t}>{t}</Tag>
                       ))}
                     </div>
                   </div>
                 </header>
                 <div className="mt-4 overflow-hidden rounded-xl border border-[color:var(--hub-border)] bg-[color:rgba(7,10,11,0.35)]">
-                  <Image
-                    src={w.baseImage.src}
-                    alt={w.baseImage.alt}
-                    width={w.baseImage.width}
-                    height={w.baseImage.height}
-                    unoptimized
-                    className="h-36 w-full object-cover"
-                    sizes="(max-width: 768px) 100vw, 640px"
-                  />
+                  {w.imageUrl ? (
+                    <Image
+                      src={w.imageUrl}
+                      alt={w.display_name ?? w.name}
+                      width={1200}
+                      height={500}
+                      unoptimized
+                      className="h-36 w-full object-cover"
+                      sizes="(max-width: 768px) 100vw, 640px"
+                    />
+                  ) : (
+                    <div className="h-36 w-full" />
+                  )}
                 </div>
                 <div className="mt-5 grid grid-cols-3 gap-3">
-                  {w.stats.slice(0, 3).map((s) => (
+                  {[
+                    { label: "BASE RPM", value: formatStat(w.base_rpm) },
+                    { label: "RECOIL", value: formatStat(w.recoil) },
+                    { label: "TTK", value: formatStat(w.ttk) },
+                  ].map((s) => (
                     <div
                       key={s.label}
                       className="rounded-xl border border-[color:var(--hub-border)] bg-[color:rgba(7,10,11,0.35)] px-3 py-3"
                     >
                       <p className="text-[11px] tracking-[0.18em] text-[color:var(--hub-muted)]">
-                        {s.label.toUpperCase()}
+                        {s.label}
                       </p>
                       <p className="mt-1 text-sm font-semibold text-[color:var(--foreground)]">
                         {s.value}
@@ -191,7 +210,7 @@ export default function Home() {
                     세부 스탯/모딩 추천은 추후 업데이트 예정
                   </p>
                   <Link
-                    href={`/weapons/${w.weaponName}`}
+                    href={`/weapons/${w.id}`}
                     className="rounded-lg bg-[color:rgba(109,127,42,0.14)] px-3 py-2 text-sm font-semibold text-[color:var(--foreground)] ring-1 ring-inset ring-[color:rgba(109,127,42,0.28)] hover:bg-[color:rgba(109,127,42,0.22)]"
                   >
                     상세 보기 →
